@@ -105,6 +105,7 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:1.18.48"
 
     implementation("maven.modrinth:ae2:26.1.13-beta") { transitive = false }
+    implementation("curse.maven:guideme-1173950:9022838")
     implementation("maven.modrinth:framedblocks:11.4.0") { transitive = false }
     implementation("curse.maven:laserio-626839:8030110") { transitive = false }
     implementation("maven.modrinth:rechiseled:1.2.6-neoforge-mc26.1") { transitive = false }
