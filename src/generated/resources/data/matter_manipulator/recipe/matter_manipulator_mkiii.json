@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": "minecraft:end_crystal",
+    "H": "minecraft:shulker_shell",
+    "M": "matter_manipulator:matter_manipulator_mkii",
+    "N": "minecraft:netherite_ingot",
+    "S": "minecraft:nether_star"
+  },
+  "pattern": [
+    "NSN",
+    "HMH",
+    "NCN"
+  ],
+  "result": {
+    "id": "matter_manipulator:matter_manipulator_mkiii"
+  }
+}

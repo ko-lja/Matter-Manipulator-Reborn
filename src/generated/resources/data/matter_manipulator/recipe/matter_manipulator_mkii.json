@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "D": "minecraft:diamond_block",
+    "E": "minecraft:ender_eye",
+    "M": "matter_manipulator:matter_manipulator_mki",
+    "N": "minecraft:netherite_ingot"
+  },
+  "pattern": [
+    "EDE",
+    "DMD",
+    "ENE"
+  ],
+  "result": {
+    "id": "matter_manipulator:matter_manipulator_mkii"
+  }
+}

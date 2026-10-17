@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "matter_manipulator:item/matter_manipulator_frame",
+    "layer1": "matter_manipulator:item/matter_manipulator_2_base",
+    "layer2": "matter_manipulator:item/matter_manipulator_2_overlay"
+  }
+}

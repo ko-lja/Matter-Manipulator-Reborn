@@ -1,0 +1,165 @@
+plugins {
+    id "java-library"
+    id "eclipse"
+    id "idea"
+    id "maven-publish"
+    id "net.neoforged.moddev" version "2.0.148"
+}
+
+group = mod_group_id
+version = "${mod_version}+${minecraft_version}"
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+// GTCEu, Project Red, Flux Networks and LittleTiles have no 26.1 build.
+def integrationMods = ["gtceu", "fluxnetworks", "projectred", "littletiles"]
+
+sourceSets.main.java {
+    integrationMods.each {
+        exclude "lu/kolja/matter_manipulator/common/integration/${it}/**"
+        exclude "lu/kolja/matter_manipulator/client/integration/${it}/**"
+    }
+    exclude "lu/kolja/matter_manipulator/mixins/integration/**"
+}
+
+sourceSets.main.resources {
+    srcDir "src/generated/resources"
+    exclude ".cache"
+}
+
+neoForge {
+    version = neoforge_version
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    runs {
+        client {
+            client()
+            sourceSet = sourceSets.main
+            gameDirectory.set(file("run/client"))
+        }
+
+        server {
+            server()
+            sourceSet = sourceSets.main
+            gameDirectory.set(file("run/server"))
+            programArgument("--nogui")
+        }
+
+        data {
+            clientData()
+            sourceSet = sourceSets.main
+            gameDirectory.set(file("run/data"))
+            programArguments.addAll("--mod", mod_id)
+            programArguments.addAll("--all")
+            programArguments.addAll("--output", file("src/generated/resources/").absolutePath)
+            programArguments.addAll("--existing", file("src/main/resources/").absolutePath)
+        }
+
+        configureEach {
+            systemProperty("forge.logging.markers", "REGISTRIES")
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}
+
+repositories {
+    mavenLocal {
+        content {
+            includeGroup "lu.kolja"
+        }
+    }
+    maven {
+        url = "https://repo.expandium.net/releases"
+        content {
+            includeGroup "lu.kolja"
+        }
+    }
+    maven {
+        url = uri("https://cursemaven.com")
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        url = uri("https://api.modrinth.com/maven")
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+}
+
+dependencies {
+    compileOnly "org.projectlombok:lombok:1.18.48"
+    annotationProcessor "org.projectlombok:lombok:1.18.48"
+
+    compileOnly("maven.modrinth:ae2:26.1.13-beta") { transitive = false }
+    compileOnly("maven.modrinth:framedblocks:11.4.0") { transitive = false }
+    compileOnly("curse.maven:laserio-626839:8030110") { transitive = false }
+    compileOnly("maven.modrinth:rechiseled:1.2.6-neoforge-mc26.1") { transitive = false }
+    compileOnly("maven.modrinth:supermartijn642s-core-lib:1.1.25-neoforge-mc26.1") { transitive = false }
+    compileOnly("maven.modrinth:supermartijn642s-config-lib:1.1.8-neoforge-mc26.1") { transitive = false }
+    compileOnly("maven.modrinth:fusion-connected-textures:1.3.16-neoforge-mc26.1") { transitive = false }
+
+    compileOnly 'org.jetbrains:annotations:26.1.0'
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.5"))
+
+    compileOnly(annotationProcessor("lu.kolja:mixinloadconditions-common:0.2.0"))
+    implementation(jarJar("lu.kolja:mixinloadconditions-neoforge:0.2.0"))
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+}
+
+tasks.named("processResources", ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version: minecraft_version,
+            neoforge_version : neoforge_version,
+            mod_id           : mod_id,
+            mod_name         : mod_name,
+            mod_license      : mod_license,
+            mod_version      : mod_version,
+            mod_authors      : mod_authors,
+            mod_description  : mod_description
+    ]
+
+    inputs.properties(replaceProperties)
+
+    filesMatching(["META-INF/neoforge.mods.toml", "pack.mcmeta"]) {
+        expand(replaceProperties)
+    }
+}
+
+publishing {
+    publications {
+        register("mavenJava", MavenPublication) {
+            artifact jar
+            artifact sourcesJar
+        }
+    }
+    repositories {
+        maven {
+            name = "expandium"
+            url = uri("https://repo.expandium.net/releases")
+            credentials {
+                username = providers.environmentVariable("MAVEN_USERNAME").orNull
+                password = providers.environmentVariable("MAVEN_PASSWORD").orNull
+            }
+        }
+    }
+}
+
+if (file("dev/dev.gradle").exists()) apply from: "dev/dev.gradle"

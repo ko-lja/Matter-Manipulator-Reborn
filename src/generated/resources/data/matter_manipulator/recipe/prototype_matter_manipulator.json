@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "B": "minecraft:iron_block",
+    "G": "minecraft:glass_pane",
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "T": "minecraft:redstone_torch"
+  },
+  "pattern": [
+    "IGI",
+    "RTR",
+    "IBI"
+  ],
+  "result": {
+    "id": "matter_manipulator:prototype_matter_manipulator"
+  }
+}
