@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "lu.kolja.matter_manipulator.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "integration.gtceu.AccessorMaintenanceHatchPartMachine",
+    "integration.projectred.TileMultipartLightMixin"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

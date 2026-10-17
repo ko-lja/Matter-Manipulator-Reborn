@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "P": {
+      "item": "matter_manipulator:prototype_matter_manipulator"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
+    }
+  },
+  "pattern": [
+    "GDG",
+    "RPR",
+    "GDG"
+  ],
+  "result": {
+    "count": 1,
+    "id": "matter_manipulator:matter_manipulator_mki"
+  }
+}

@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+      CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Check the tag against gradle.properties
+        run: |
+          mod_version=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')
+          minecraft_version=$(sed -n 's/^minecraft_version=//p' gradle.properties | tr -d '\r')
+          version="$mod_version+$minecraft_version"
+          if [ "${{ github.event.release.tag_name }}" != "v$version" ]; then
+            echo "::error::This branch builds $version; tag the release v$version."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "MINECRAFT_VERSION=$minecraft_version" >> "$GITHUB_ENV"
+
+      - run: ./gradlew build
+
+      - name: Attach the jars to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" build/libs/*.jar
+
+      - name: Publish to Maven
+        if: env.MAVEN_PASSWORD != ''
+        run: ./gradlew publish
+
+      - name: Publish to CurseForge
+        if: env.CURSEFORGE_TOKEN != ''
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1748833
+          curseforge-token: ${{ env.CURSEFORGE_TOKEN }}
+          files: build/libs/matter_manipulator-${{ env.VERSION }}.jar
+          name: Matter Manipulator ${{ env.VERSION }}
+          version: ${{ env.VERSION }}
+          version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
+          changelog: ${{ github.event.release.body }}
+          loaders: neoforge
+          game-versions: ${{ env.MINECRAFT_VERSION }}
+          java: 21
+
+      - name: Publish to Modrinth
+        if: env.MODRINTH_TOKEN != ''
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: 9UHDa0XE
+          modrinth-token: ${{ env.MODRINTH_TOKEN }}
+          files: build/libs/matter_manipulator-${{ env.VERSION }}.jar
+          name: Matter Manipulator ${{ env.VERSION }}
+          version: ${{ env.VERSION }}
+          version-type: ${{ github.event.release.prerelease && 'beta' || 'release' }}
+          changelog: ${{ github.event.release.body }}
+          loaders: neoforge
+          game-versions: ${{ env.MINECRAFT_VERSION }}
+          java: 21
