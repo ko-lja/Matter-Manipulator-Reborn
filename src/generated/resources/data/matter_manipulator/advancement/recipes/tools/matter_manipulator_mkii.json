@@ -1,32 +1,32 @@
 {
-  "parent": "minecraft:recipes/root",
-  "criteria": {
-    "has_mki": {
-      "conditions": {
-        "items": [
-          {
-            "items": "matter_manipulator:matter_manipulator_mki"
-          }
-        ]
-      },
-      "trigger": "minecraft:inventory_changed"
+    "parent": "minecraft:recipes/root",
+    "criteria": {
+        "has_mki": {
+            "conditions": {
+                "items": [
+                    {
+                        "items": "matter_manipulator:matter_manipulator_mki"
+                    }
+                ]
+            },
+            "trigger": "minecraft:inventory_changed"
+        },
+        "has_the_recipe": {
+            "conditions": {
+                "recipe": "matter_manipulator:matter_manipulator_mkii"
+            },
+            "trigger": "minecraft:recipe_unlocked"
+        }
     },
-    "has_the_recipe": {
-      "conditions": {
-        "recipe": "matter_manipulator:matter_manipulator_mkii"
-      },
-      "trigger": "minecraft:recipe_unlocked"
+    "requirements": [
+        [
+            "has_the_recipe",
+            "has_mki"
+        ]
+    ],
+    "rewards": {
+        "recipes": [
+            "matter_manipulator:matter_manipulator_mkii"
+        ]
     }
-  },
-  "requirements": [
-    [
-      "has_the_recipe",
-      "has_mki"
-    ]
-  ],
-  "rewards": {
-    "recipes": [
-      "matter_manipulator:matter_manipulator_mkii"
-    ]
-  }
 }

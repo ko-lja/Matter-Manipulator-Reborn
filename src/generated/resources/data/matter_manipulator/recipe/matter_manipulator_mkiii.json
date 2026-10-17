@@ -1,30 +1,30 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "equipment",
-  "key": {
-    "C": {
-      "item": "minecraft:end_crystal"
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "key": {
+        "C": {
+            "item": "minecraft:end_crystal"
+        },
+        "H": {
+            "item": "minecraft:shulker_shell"
+        },
+        "M": {
+            "item": "matter_manipulator:matter_manipulator_mkii"
+        },
+        "N": {
+            "item": "minecraft:netherite_ingot"
+        },
+        "S": {
+            "item": "minecraft:nether_star"
+        }
     },
-    "H": {
-      "item": "minecraft:shulker_shell"
-    },
-    "M": {
-      "item": "matter_manipulator:matter_manipulator_mkii"
-    },
-    "N": {
-      "item": "minecraft:netherite_ingot"
-    },
-    "S": {
-      "item": "minecraft:nether_star"
+    "pattern": [
+        "NSN",
+        "HMH",
+        "NCN"
+    ],
+    "result": {
+        "count": 1,
+        "id": "matter_manipulator:matter_manipulator_mkiii"
     }
-  },
-  "pattern": [
-    "NSN",
-    "HMH",
-    "NCN"
-  ],
-  "result": {
-    "count": 1,
-    "id": "matter_manipulator:matter_manipulator_mkiii"
-  }
 }
