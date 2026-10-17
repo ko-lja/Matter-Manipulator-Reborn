@@ -111,6 +111,7 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:1.18.32"
 
     implementation("maven.modrinth:ae2:19.2.18") { transitive = false }
+    implementation("curse.maven:guideme-1173950:8897145")
     implementation("maven.modrinth:gregtechceu-modern:mc1.21.1-7.0.2") { transitive = false }
     implementation("maven.modrinth:ldlib:mc1.21.1-1.0.35.a-neoforge") { transitive = false }
     implementation("curse.maven:flux-networks-248020:6089446") { transitive = false }
