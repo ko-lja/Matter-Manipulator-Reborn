@@ -129,6 +129,7 @@ dependencies {
     implementation files(projectRedNestedJars).asFileTree.matching { include "*.jar" }
     implementation("maven.modrinth:creativecore:2.13.51") { transitive = false }
     implementation("maven.modrinth:littletiles:1.6.0-pre234") { transitive = false }
+    implementation("curse.maven:domum-ornamentum-527361:7789217") { transitive = false }
     implementation("maven.modrinth:rechiseled:1.2.6-neoforge-mc1.21") { transitive = false }
     implementation("maven.modrinth:supermartijn642s-core-lib:1.1.25-neoforge-mc1.21") { transitive = false }
     implementation("maven.modrinth:supermartijn642s-config-lib:1.1.8-neoforge-mc1.21") { transitive = false }

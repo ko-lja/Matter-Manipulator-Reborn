@@ -2,6 +2,7 @@ package lu.kolja.matter_manipulator.common.integration;
 
 import lu.kolja.matter_manipulator.MatterManipulator;
 import lu.kolja.matter_manipulator.common.integration.ae2.Ae2Integration;
+import lu.kolja.matter_manipulator.common.integration.domumornamentum.DomumOrnamentumIntegration;
 import lu.kolja.matter_manipulator.common.integration.fluxnetworks.FluxNetworksIntegration;
 import lu.kolja.matter_manipulator.common.integration.framedblocks.FramedBlocksIntegration;
 import lu.kolja.matter_manipulator.common.integration.laserio.LaserIoIntegration;
@@ -78,6 +79,9 @@ public final class IntegrationDispatcher {
             if (mods.isLoaded("rechiseled")) {
                 RechiseledIntegration.register(builder);
             }
+            if (mods.isLoaded("domum_ornamentum")) {
+                DomumOrnamentumIntegration.register(builder);
+            }
             registrations.forEach(registration -> registration.accept(builder));
             registry = builder.build();
             generation++;
@@ -87,7 +91,7 @@ public final class IntegrationDispatcher {
         var mods = ModList.get();
         MatterManipulator.LOGGER.info(
                 "Matter Manipulator integrations initialized: AE2={}, GTCEu={}, Flux={}, FramedBlocks={}, LaserIO={}, "
-                        + "ProjectRed={}, LittleTiles={}, Rechiseled={}",
+                        + "ProjectRed={}, LittleTiles={}, Rechiseled={}, DomumOrnamentum={}",
                 mods.isLoaded("ae2"),
                 mods.isLoaded("gtceu"),
                 mods.isLoaded("fluxnetworks"),
@@ -95,7 +99,8 @@ public final class IntegrationDispatcher {
                 mods.isLoaded("laserio"),
                 projectRedLoaded(mods),
                 mods.isLoaded("littletiles"),
-                mods.isLoaded("rechiseled")
+                mods.isLoaded("rechiseled"),
+                mods.isLoaded("domum_ornamentum")
         );
     }
 

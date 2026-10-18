@@ -5,6 +5,7 @@ import lu.kolja.matter_manipulator.common.blueprint.BlueprintServerCache;
 import lu.kolja.matter_manipulator.common.config.MMConfig;
 import lu.kolja.matter_manipulator.common.integration.IntegrationDispatcher;
 import lu.kolja.matter_manipulator.api.CableIntegration;
+import lu.kolja.matter_manipulator.api.PlacementPurpose;
 import lu.kolja.matter_manipulator.common.item.ManipulatorItem;
 import lu.kolja.matter_manipulator.common.localization.MMMessage;
 import lu.kolja.matter_manipulator.common.manipulator.BlockSlot;
@@ -135,6 +136,7 @@ public final class BuildPlanner {
         var targetChecks = new IdentityHashMap<BlockStateSpec, Optional<Component>>();
         var targetError = new Component[1];
         var slotSpecs = new EnumMap<BlockSlot, Optional<BlockStateSpec>>(BlockSlot.class);
+        var slotCaptures = new EnumMap<BlockSlot, Optional<CapturedBlock>>(BlockSlot.class);
         boolean complete = ShapeGenerator.generate(state.shape(), a.get(), b.get(), anchors.c().orElse(null), limit + 1, (pos, slot) -> {
             var spec = slotSpecs.computeIfAbsent(slot,
                     ignored -> state.preferredSlot(slot).or(() -> state.slot(BlockSlot.VOLUME)));
@@ -145,9 +147,12 @@ public final class BuildPlanner {
                 );
                 if (error.isPresent()) {
                     targetError[0] = error.get();
-                } else {
-                    changes.add(targetChange(pos, blockStateSpec));
+                    return;
                 }
+                var captured = slotCaptures.computeIfAbsent(slot, ignored -> state.preferredCapturedSlot(slot));
+                changes.add(captured.isEmpty() || blockStateSpec.isAir()
+                        ? targetChange(pos, blockStateSpec)
+                        : BlockChange.placeCaptured(pos, captured.get(), PlacementPurpose.COPY_TEMPLATE));
             });
         });
         if (targetError[0] != null) {

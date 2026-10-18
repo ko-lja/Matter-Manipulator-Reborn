@@ -27,6 +27,7 @@ Machines, cables, their settings, and filters from the mods below are handled pr
 | Mod | 1.20.1 | 1.21.1 | 26.1 |
 |---|:---:|:---:|:---:|
 | [Applied Energistics 2](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2) | ✅ | ✅ | ✅ |
+| [Domum Ornamentum](https://www.curseforge.com/minecraft/mc-mods/domum-ornamentum) | ✅ | ✅ | ❌ |
 | [Flux Networks](https://www.curseforge.com/minecraft/mc-mods/flux-networks) | ✅ | ✅ | ❌ |
 | [FramedBlocks](https://www.curseforge.com/minecraft/mc-mods/framedblocks) | ✅ | ✅ | ✅ |
 | [GTCEu Modern](https://www.curseforge.com/minecraft/mc-mods/gregtechceu-modern) | ✅ | ✅ | ❌ |

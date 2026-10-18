@@ -141,7 +141,7 @@ public record ToolTransform(
             return Optional.of(state);
         }
         var up = transform(Direction.UP);
-        if (state.getBlock() instanceof StairBlock) {
+        if (isStairs(state)) {
             return transformProperties(state, approximate);
         }
         if (up == Direction.UP) {
@@ -171,6 +171,10 @@ public record ToolTransform(
         throw new IllegalStateException("No horizontal rotation matches " + summary());
     }
 
+    private static boolean isStairs(BlockState state) {
+        return state.hasProperty(StairBlock.FACING) && state.hasProperty(StairBlock.HALF) && state.hasProperty(StairBlock.SHAPE);
+    }
+
     private static BlockState ownOrGeneric(BlockState before, BlockState own, ToolTransform generic) {
         if (own != before) {
             return own;
@@ -193,7 +197,7 @@ public record ToolTransform(
         }
         var result = state;
         var handled = new HashSet<Property<?>>();
-        if (state.getBlock() instanceof StairBlock) {
+        if (isStairs(state)) {
             var stairs = transformStairs(state, approximate);
             if (stairs.isEmpty()) {
                 return stairs;
