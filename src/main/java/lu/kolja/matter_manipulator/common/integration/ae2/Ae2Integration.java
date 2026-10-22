@@ -28,6 +28,7 @@ import appeng.block.crafting.PatternProviderBlock;
 import appeng.block.networking.CableBusBlock;
 import appeng.blockentity.AEBaseBlockEntity;
 import appeng.blockentity.networking.CableBusBlockEntity;
+import appeng.blockentity.networking.WirelessAccessPointBlockEntity;
 import appeng.core.definitions.AEItems;
 import appeng.helpers.patternprovider.PatternContainer;
 import appeng.util.SettingsFrom;
@@ -106,6 +107,8 @@ public final class Ae2Integration {
     private static final String LINK_X = "x";
     private static final String LINK_Y = "y";
     private static final String LINK_Z = "z";
+    private static final ResourceLocation INFINITY_CARD = new ResourceLocation("aeinfinitybooster", "infinity_card");
+    private static final ResourceLocation DIMENSION_CARD = new ResourceLocation("aeinfinitybooster", "dimension_card");
     public static final Map<UUID, CraftingQueue> CRAFTING_QUEUES = new LinkedHashMap<>();
 
     private Ae2Integration() {}
@@ -1134,11 +1137,26 @@ public final class Ae2Integration {
         if (!(level.getBlockEntity(pos) instanceof IWirelessAccessPoint accessPoint) || !accessPoint.isActive()) {
             return null;
         }
-        double range = accessPoint.getRange();
-        if (context.player().blockPosition().distSqr(pos) > range * range) {
-            return null;
+        // AEInfinityBooster only patches AE2's WirelessTerminalMenuHost range check, so detect its cards here
+        if (!hasInfiniteRangeCard(accessPoint)) {
+            double range = accessPoint.getRange();
+            if (context.player().blockPosition().distSqr(pos) > range * range) {
+                return null;
+            }
         }
         return accessPoint.getGrid() == null ? null : accessPoint;
+    }
+
+    private static boolean hasInfiniteRangeCard(IWirelessAccessPoint accessPoint) {
+        if (!(accessPoint instanceof WirelessAccessPointBlockEntity blockEntity)) {
+            return false;
+        }
+        var stack = blockEntity.getInternalInventory().getStackInSlot(0);
+        if (stack.isEmpty()) {
+            return false;
+        }
+        var id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        return INFINITY_CARD.equals(id) || DIMENSION_CARD.equals(id);
     }
 
     private static IGrid linkedGrid(IntegrationContext.Storage context) {
