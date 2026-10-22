@@ -113,7 +113,7 @@ public final class Ae2Integration {
     public static void register(IntegrationRegistrar registrar) {
         var settings = new SettingsIntegration();
         var cable = new CableBusIntegration();
-        registrar.block(SETTINGS_ID, settings, Ae2Integration::isAe2Block);
+        registrar.block(SETTINGS_ID, settings, state -> isAe2Block(state) && state.hasBlockEntity());
         registrar.block(CABLE_ID, cable, state -> state.getBlock() instanceof CableBusBlock);
         registrar.block(ORIENTATION_ID, new OrientationIntegration(), Ae2Integration::hasAe2Orientation);
         registrar.cable(CABLE_ID, cable, state -> state.getBlock() instanceof CableBusBlock);
