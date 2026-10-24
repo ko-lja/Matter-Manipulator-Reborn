@@ -3,13 +3,14 @@ package lu.kolja.matter_manipulator.client.integration.gtceu;
 import com.gregtechceu.gtceu.api.block.PipeBlock;
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
+import com.gregtechceu.gtceu.client.model.GTModelProperties;
 import lu.kolja.matter_manipulator.client.preview.PreviewDebugStats;
 import lu.kolja.matter_manipulator.api.client.PreviewModels;
 import lu.kolja.matter_manipulator.api.client.ClientIntegrationRegistrar;
 import lu.kolja.matter_manipulator.api.client.ClientIntegrationContext;
 import lu.kolja.matter_manipulator.api.client.ClientPreviewIntegration;
 import lu.kolja.matter_manipulator.api.client.PreviewDetail;
-import lu.kolja.matter_manipulator.common.integration.gtceu.GtceuIntegration;
+import lu.kolja.matter_manipulator.common.integration.gtceu.GTIntegration;
 import lu.kolja.matter_manipulator.api.DirectionTransform;
 import lu.kolja.matter_manipulator.api.BlockSnapshot;
 import net.minecraft.core.Direction;
@@ -17,55 +18,52 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.ColorResolver;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public final class GtceuClientIntegration {
+public final class GTClientIntegration {
 
     private static final String PIPE_CONNECTIONS = "pipe_connections";
     private static final String PIPE_BLOCKED_CONNECTIONS = "pipe_blocked_connections";
     private static final String PAINTING_COLOR = "painting_color";
-    private static final Map<SimplePipe, DetachedPipeLevel> SIMPLE_PIPES = new HashMap<>();
+    private static final Map<PipeMasks, ModelData> SIMPLE_PIPE_DATA = new HashMap<>();
 
-    private GtceuClientIntegration() {}
+    private GTClientIntegration() {}
 
     public static void register(ClientIntegrationRegistrar registrar) {
         registrar.preview(
-                GtceuIntegration.PIPE_ID,
+                GTIntegration.PIPE_ID,
                 new PipePreviewIntegration(),
                 state -> state.getBlock() instanceof PipeBlock<?, ?, ?>
         );
     }
 
-    private static final class PipePreviewIntegration implements ClientPreviewIntegration {
+    private record PipePreviewIntegration() implements ClientPreviewIntegration {
 
         @Override
         public ModelData create(ClientIntegrationContext.CapturedPreview context) {
-            if (!(context.state().getBlock() instanceof PipeBlock<?, ?, ?> pipeBlock)) {
+            if (!(context.state().getBlock() instanceof PipeBlock<?, ?, ?>)) {
                 return ModelData.EMPTY;
             }
             var tag = payload(context.captured());
             var masks = routeMasks(tag, context.lineDirections());
             if (context.detail() != PreviewDetail.FULL || simpleSyntheticPipe(context.captured(), tag)) {
-                return simplePipeModelData(pipeBlock, context.state(), masks);
+                return simplePipeModelData(masks);
             }
             PreviewDebugStats.fakeBlockEntityCreated();
-            PipeBlockEntity<?, ?> pipe = pipeBlock.newBlockEntity(context.pos(), context.state());
+            var pipe = previewPipe(context.state(), context.pos(), context.level(), masks.connections(),
+                    masks.blockedConnections(), tag.contains(PAINTING_COLOR) ? tag.getInt(PAINTING_COLOR) : null);
             if (pipe == null) {
                 return ModelData.EMPTY;
-            }
-            pipe.setLevel(context.level());
-            pipe.setConnections(masks.connections());
-            pipe.setBlockedConnections(masks.blockedConnections());
-            if (tag.contains(PAINTING_COLOR)) {
-                pipe.setPaintingColor(tag.getInt(PAINTING_COLOR));
             }
             var previewLevel = new PreviewModels.SingleBlockPreviewLevel(
                     context.level(),
@@ -83,24 +81,21 @@ public final class GtceuClientIntegration {
 
         @Override
         public ModelData fromWorld(ClientIntegrationContext.WorldPreview context) {
-            if (!(context.previewState().getBlock() instanceof PipeBlock<?, ?, ?> pipeBlock)
+            if (!(context.previewState().getBlock() instanceof PipeBlock<?, ?, ?>)
                     || !(context.level().getBlockEntity(context.sourcePos()) instanceof PipeBlockEntity<?, ?> sourcePipe)) {
                 return ModelData.EMPTY;
             }
+            int connections = transformDirectionMask(sourcePipe.getConnections(), context.transform());
+            int blockedConnections = transformDirectionMask(sourcePipe.getBlockedConnections(), context.transform());
             if (context.detail() != PreviewDetail.FULL) {
-                return simplePipeModelData(pipeBlock, context.previewState(), new PipeMasks(
-                        transformDirectionMask(sourcePipe.getConnections(), context.transform()),
-                        transformDirectionMask(sourcePipe.getBlockedConnections(), context.transform())));
+                return simplePipeModelData(new PipeMasks(connections, blockedConnections));
             }
             PreviewDebugStats.fakeBlockEntityCreated();
-            PipeBlockEntity<?, ?> previewPipe = pipeBlock.newBlockEntity(context.previewPos(), context.previewState());
+            var previewPipe = previewPipe(context.previewState(), context.previewPos(), context.level(),
+                    connections, blockedConnections, sourcePipe.getPaintingColor());
             if (previewPipe == null) {
                 return ModelData.EMPTY;
             }
-            previewPipe.setLevel(context.level());
-            previewPipe.setConnections(transformDirectionMask(sourcePipe.getConnections(), context.transform()));
-            previewPipe.setBlockedConnections(transformDirectionMask(sourcePipe.getBlockedConnections(), context.transform()));
-            previewPipe.setPaintingColor(sourcePipe.getPaintingColor());
             var previewLevel = new PreviewModels.SingleBlockPreviewLevel(
                     context.level(),
                     context.previewPos(),
@@ -120,40 +115,59 @@ public final class GtceuClientIntegration {
         if (captured == null) {
             return new CompoundTag();
         }
-        var pipe = captured.payload(GtceuIntegration.PIPE_ID);
-        var paint = captured.payload(GtceuIntegration.PAINT_ID);
+        var pipe = captured.payload(GTIntegration.PIPE_ID);
+        var paint = captured.payload(GTIntegration.PAINT_ID);
         if (paint.contains(PAINTING_COLOR)) {
             pipe.putInt(PAINTING_COLOR, paint.getInt(PAINTING_COLOR));
         }
         return pipe;
     }
 
-    static ModelData simplePipeModelData(PipeBlock<?, ?, ?> block, BlockState state, PipeMasks masks) {
-        var level = detachedPipe(block, state, masks);
-        if (level == null) {
-            return ModelData.EMPTY;
-        }
-        PreviewDebugStats.gtceuModelDataBuilt();
-        return PreviewModels.blockModelData(level, BlockPos.ZERO, state, ModelData.EMPTY);
+    static ModelData simplePipeModelData(PipeMasks masks) {
+        return SIMPLE_PIPE_DATA.computeIfAbsent(masks, ignored -> {
+            PreviewDebugStats.modelDataBuilt();
+            PreviewDebugStats.gtceuModelDataBuilt();
+            return pipeModelData(NoBlockEntityLevel.INSTANCE, BlockPos.ZERO, masks.connections(), masks.blockedConnections());
+        });
     }
 
-    static DetachedPipeLevel detachedPipe(PipeBlock<?, ?, ?> block, BlockState state, PipeMasks masks) {
-        return SIMPLE_PIPES.computeIfAbsent(new SimplePipe(state, masks), key -> {
-            PipeBlockEntity<?, ?> pipe = block.newBlockEntity(BlockPos.ZERO, state);
-            if (pipe == null) {
-                return null;
-            }
-            PreviewDebugStats.fakeBlockEntityCreated();
-            pipe.setConnections(masks.connections());
-            pipe.setBlockedConnections(masks.blockedConnections());
-            return new DetachedPipeLevel(state, pipe);
-        });
+    static ModelData pipeModelData(BlockAndTintGetter level, BlockPos pos, int connections, int blockedConnections) {
+        return ModelData.builder()
+                .with(GTModelProperties.LEVEL, level)
+                .with(GTModelProperties.POS, pos)
+                .with(GTModelProperties.PIPE_CONNECTION_MASK, connections)
+                .with(GTModelProperties.PIPE_BLOCKED_MASK, blockedConnections)
+                .build();
+    }
+
+    private static @Nullable BlockEntity previewPipe(
+            BlockState state,
+            BlockPos pos,
+            Level level,
+            int connections,
+            int blockedConnections,
+            @Nullable Integer paintingColor
+    ) {
+        if (!(state.getBlock() instanceof PipeBlock<?, ?, ?> pipeBlock)) {
+            return null;
+        }
+        PipeBlockEntity<?, ?> pipe = pipeBlock.newBlockEntity(pos, state);
+        if (pipe == null) {
+            return null;
+        }
+        pipe.setLevel(level);
+        pipe.setConnections(connections);
+        pipe.setBlockedConnections(blockedConnections);
+        if (paintingColor != null) {
+            pipe.setPaintingColor(paintingColor);
+        }
+        return pipe;
     }
 
     private static boolean simpleSyntheticPipe(BlockSnapshot captured, CompoundTag payload) {
         boolean unpainted = !payload.contains(PAINTING_COLOR)
                 || payload.getInt(PAINTING_COLOR) == IPaintable.UNPAINTED_COLOR;
-        boolean hasCovers = captured != null && !captured.payload(GtceuIntegration.COVER_ID).isEmpty();
+        boolean hasCovers = captured != null && !captured.payload(GTIntegration.COVER_ID).isEmpty();
         return unpainted && !hasCovers;
     }
 
@@ -198,9 +212,8 @@ public final class GtceuClientIntegration {
 
     record PipeMasks(int connections, int blockedConnections) {}
 
-    private record SimplePipe(BlockState state, PipeMasks masks) {}
-
-    record DetachedPipeLevel(BlockState state, BlockEntity blockEntity) implements BlockAndTintGetter {
+    private enum NoBlockEntityLevel implements BlockAndTintGetter {
+        INSTANCE;
 
         @Override
         public float getShade(Direction direction, boolean shade) {
@@ -219,12 +232,12 @@ public final class GtceuClientIntegration {
 
         @Override
         public BlockEntity getBlockEntity(BlockPos pos) {
-            return BlockPos.ZERO.equals(pos) ? blockEntity : null;
+            return null;
         }
 
         @Override
         public BlockState getBlockState(BlockPos pos) {
-            return BlockPos.ZERO.equals(pos) ? state : Blocks.AIR.defaultBlockState();
+            return Blocks.AIR.defaultBlockState();
         }
 
         @Override

@@ -7,7 +7,7 @@ import lu.kolja.matter_manipulator.api.client.PreviewDetail;
 import lu.kolja.matter_manipulator.client.integration.domumornamentum.DomumOrnamentumClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.fluxnetworks.FluxNetworksClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.framedblocks.FramedBlocksClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.gtceu.GtceuClientIntegration;
+import lu.kolja.matter_manipulator.client.integration.gtceu.GTClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.laserio.LaserIoClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.littletiles.LittleTilesClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.projectred.ProjectRedClientIntegration;
@@ -52,7 +52,7 @@ public final class ClientIntegrationDispatcher {
                 Ae2ClientIntegration.register(builder);
             }
             if (mods.isLoaded("gtceu")) {
-                GtceuClientIntegration.register(builder);
+                GTClientIntegration.register(builder);
             }
             if (mods.isLoaded("fluxnetworks")) {
                 FluxNetworksClientIntegration.register(builder);

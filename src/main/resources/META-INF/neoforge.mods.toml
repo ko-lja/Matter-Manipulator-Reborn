@@ -30,7 +30,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="gtceu"
 type="optional"
-versionRange="[7.0.2,8.0.0)"
+versionRange="[8.0.0-alpha,)"
 ordering="AFTER"
 side="BOTH"
 

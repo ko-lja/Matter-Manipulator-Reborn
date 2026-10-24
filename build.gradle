@@ -87,6 +87,12 @@ repositories {
         }
     }
     maven {
+        url = uri("https://maven.gtceu.com")
+        content {
+            includeGroup "com.gregtechceu.gtceu"
+        }
+    }
+    maven {
         url = uri("https://api.modrinth.com/maven")
         content {
             includeGroup "maven.modrinth"
@@ -106,6 +112,17 @@ def projectRedNestedJars = tasks.register("projectRedNestedJars", Sync) {
     into layout.buildDirectory.dir("projectred-jarjar")
 }
 
+def gtceuNestedJars = tasks.register("gtceuNestedJars", Sync) {
+    def jars = configurations.detachedConfiguration(
+            dependencies.create("com.gregtechceu.gtceu:gtceu-1.21.1:$gtceu_version") { transitive = false })
+    from({ jars.collect { zipTree(it) } }) {
+        include "META-INF/jarjar/*.jar"
+        eachFile { path = name }
+    }
+    includeEmptyDirs = false
+    into layout.buildDirectory.dir("gtceu-jarjar")
+}
+
 dependencies {
     // we don't want need other mods in our data run
     def dataRun = gradle.startParameter.taskNames.any { it.toLowerCase().contains("rundata") }
@@ -121,8 +138,12 @@ dependencies {
 
     implement("maven.modrinth:ae2:19.2.18")
     implement("curse.maven:guideme-1173950:8897145")
-    implement("maven.modrinth:gregtechceu-modern:mc1.21.1-7.0.2")
-    implement("maven.modrinth:ldlib:mc1.21.1-1.0.35.a-neoforge")
+    implement("com.gregtechceu.gtceu:gtceu-1.21.1:$gtceu_version")
+    def gtceuNested = files(gtceuNestedJars).asFileTree.matching { include "*.jar" }
+    compileOnly gtceuNested
+    if (!dataRun) {
+        runtimeOnly gtceuNested
+    }
     implement("curse.maven:flux-networks-248020:6089446")
     implement("maven.modrinth:framedblocks:10.6.3")
     implement("curse.maven:laserio-626839:5730007")

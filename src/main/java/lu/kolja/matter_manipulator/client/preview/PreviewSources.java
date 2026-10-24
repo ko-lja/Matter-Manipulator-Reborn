@@ -3,6 +3,7 @@ package lu.kolja.matter_manipulator.client.preview;
 import lu.kolja.matter_manipulator.common.blueprint.Blueprint;
 import lu.kolja.matter_manipulator.common.build.BlockCost;
 import lu.kolja.matter_manipulator.common.build.BlockPolicy;
+import lu.kolja.matter_manipulator.common.build.ExchangeMatch;
 import lu.kolja.matter_manipulator.common.build.PlacementCost;
 import lu.kolja.matter_manipulator.common.build.ShapeGenerator;
 import lu.kolja.matter_manipulator.common.integration.IntegrationDispatcher;
@@ -82,12 +83,10 @@ public final class PreviewSources {
             CapturedBlock capturedTarget, int limit, PreviewContent previous) {
         var min = snapshot.key.min();
         var builder = new PreviewContent.Builder(limit);
-        snapshot.forEach((pos, state, stamp) -> {
-            if (state == match) {
-                builder.add(pos.getX() - min.getX(), pos.getY() - min.getY(), pos.getZ() - min.getZ(), target,
-                        new PreviewVisual.Exchange(pos.immutable(), state, stamp, capturedTarget));
-            }
-        });
+        var exchange = new ExchangeMatch(match, target);
+        snapshot.forEach((pos, state, stamp) -> exchange.target(state).ifPresent(oriented ->
+                builder.add(pos.getX() - min.getX(), pos.getY() - min.getY(), pos.getZ() - min.getZ(), oriented,
+                        new PreviewVisual.Exchange(pos.immutable(), state, stamp, capturedTarget))));
         return builder.build(previous);
     }
 

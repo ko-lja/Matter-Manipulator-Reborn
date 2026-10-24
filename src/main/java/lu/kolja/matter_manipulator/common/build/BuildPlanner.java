@@ -305,14 +305,18 @@ public final class BuildPlanner {
         if (!tier.canRemove()) {
             return Result.error(MMMessage.EXCHANGE_NEEDS_REMOVE.text());
         }
-        var match = whitelist.get().resolve();
-        var targetState = targetSpec.resolve();
+        var exchange = new ExchangeMatch(whitelist.get().resolve(), targetSpec.resolve());
+        var targetSpecs = new IdentityHashMap<BlockState, BlockStateSpec>();
+        targetSpecs.put(targetSpec.resolve(), targetSpec);
         var changes = new ArrayList<BlockChange>();
         var leftOut = new LinkedHashMap<Component, Integer>();
         for (var pos : ShapeGenerator.region(a.get(), b.get())) {
-            if (!level.getBlockState(pos).equals(match)) {
+            var match = level.getBlockState(pos);
+            var oriented = exchange.target(match);
+            if (oriented.isEmpty()) {
                 continue;
             }
+            var targetState = oriented.get();
             var decision = PlacementDecision.exchange(
                     PlacementDecision.Existing.at(level, player, pos, targetState),
                     match,
@@ -329,12 +333,13 @@ public final class BuildPlanner {
             var compat = targetState.isAir()
                     ? new CompoundTag()
                     : IntegrationDispatcher.captureExchange(level, pos, match, targetState);
+            var spec = targetSpecs.computeIfAbsent(targetState, BlockStateSpec::fromState);
             if (compat.isEmpty()) {
-                changes.add(targetChange(pos, targetSpec).withExchanged(match));
+                changes.add(targetChange(pos, spec).withExchanged(match));
             } else {
                 changes.add(BlockChange.placeCaptured(
                         pos,
-                        new CapturedBlock(targetSpec, new CompoundTag(), compat)
+                        new CapturedBlock(spec, new CompoundTag(), compat)
                 ).withExchanged(match));
             }
             if (changes.size() > MMConfig.maxQueuedBlocks()) {

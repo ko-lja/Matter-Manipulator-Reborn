@@ -4,22 +4,19 @@ import com.gregtechceu.gtceu.api.block.MetaMachineBlock;
 import com.gregtechceu.gtceu.api.block.PipeBlock;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
-import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.blockentity.PipeBlockEntity;
 import com.gregtechceu.gtceu.api.capability.ICoverable;
-import com.gregtechceu.gtceu.api.machine.RotationState;
-import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
-import com.gregtechceu.gtceu.api.registry.GTRegistries;
+import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.api.machine.feature.IAutoOutputFluid;
-import com.gregtechceu.gtceu.api.machine.feature.IAutoOutputItem;
-import com.gregtechceu.gtceu.api.machine.feature.IDropSaveMachine;
-import com.gregtechceu.gtceu.api.machine.feature.IHasCircuitSlot;
 import com.gregtechceu.gtceu.api.machine.feature.IMufflableMachine;
 import com.gregtechceu.gtceu.api.machine.steam.SteamWorkableMachine;
+import com.gregtechceu.gtceu.api.machine.trait.notifiable.NotifiableItemStackHandler;
+import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.common.item.behavior.IntCircuitBehaviour;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.MaintenanceHatchPartMachine;
-import com.lowdragmc.lowdraglib.syncdata.accessor.IManagedAccessor;
+import com.gregtechceu.gtceu.common.machine.trait.AutoOutputTrait;
+import com.gregtechceu.gtceu.common.machine.trait.ProgrammableCircuitSlotTrait;
 import lu.kolja.matter_manipulator.api.IntegrationRegistrar;
 import lu.kolja.matter_manipulator.api.BlockIntegration;
 import lu.kolja.matter_manipulator.api.CableIntegration;
@@ -28,8 +25,8 @@ import lu.kolja.matter_manipulator.api.ItemRequirement;
 import lu.kolja.matter_manipulator.api.PlacementPreparationPlan;
 import lu.kolja.matter_manipulator.api.PlacementPurpose;
 import lu.kolja.matter_manipulator.api.DirectionTransform;
+import com.mojang.serialization.DynamicOps;
 import lu.kolja.matter_manipulator.common.util.InventoryUtil;
-import lu.kolja.matter_manipulator.mixins.integration.gtceu.AccessorMaintenanceHatchPartMachine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -53,7 +50,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public final class GtceuIntegration {
+public final class GTIntegration {
 
     public static final ResourceLocation PIPE_ID = ResourceLocation.fromNamespaceAndPath("gtceu", "pipe");
     public static final ResourceLocation MACHINE_ID = ResourceLocation.fromNamespaceAndPath("gtceu", "machine");
@@ -88,18 +85,18 @@ public final class GtceuIntegration {
     private static final String FUNDED_ITEM = "_funded_item";
     private static final String FUNDED_ITEMS = "_funded_items";
 
-    private GtceuIntegration() {}
+    private GTIntegration() {}
 
     public static void register(IntegrationRegistrar registrar) {
         var pipe = new PipeIntegration();
-        registrar.block(PIPE_ID, pipe, GtceuIntegration::isPipe);
-        registrar.cable(PIPE_ID, pipe, GtceuIntegration::isPipe);
-        registrar.block(MACHINE_ID, new MachineIntegration(), GtceuIntegration::isGtceuBlock);
-        registrar.block(MUFFLER_ID, new MufflerIntegration(), GtceuIntegration::isGtceuBlock);
-        registrar.block(CIRCUIT_ID, new CircuitIntegration(), GtceuIntegration::isGtceuBlock);
-        registrar.block(PAINT_ID, new PaintIntegration(), GtceuIntegration::isGtceuBlock);
-        registrar.block(COVER_ID, new CoverIntegration(), GtceuIntegration::isGtceuBlock);
-        registrar.block(MAINTENANCE_ID, new MaintenanceHatchIntegration(), GtceuIntegration::isGtceuBlock);
+        registrar.block(PIPE_ID, pipe, GTIntegration::isPipe);
+        registrar.cable(PIPE_ID, pipe, GTIntegration::isPipe);
+        registrar.block(MACHINE_ID, new MachineIntegration(), GTIntegration::isGtceuBlock);
+        registrar.block(MUFFLER_ID, new MufflerIntegration(), GTIntegration::isGtceuBlock);
+        registrar.block(CIRCUIT_ID, new CircuitIntegration(), GTIntegration::isGtceuBlock);
+        registrar.block(PAINT_ID, new PaintIntegration(), GTIntegration::isGtceuBlock);
+        registrar.block(COVER_ID, new CoverIntegration(), GTIntegration::isGtceuBlock);
+        registrar.block(MAINTENANCE_ID, new MaintenanceHatchIntegration(), GTIntegration::isGtceuBlock);
     }
 
     private static boolean isPipe(BlockState state) {
@@ -110,7 +107,7 @@ public final class GtceuIntegration {
         return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace().equals("gtceu");
     }
 
-    private static final class PipeIntegration implements BlockIntegration, CableIntegration {
+    private record PipeIntegration() implements BlockIntegration, CableIntegration {
 
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
@@ -152,12 +149,12 @@ public final class GtceuIntegration {
             var copy = payload.copy();
             if (copy.contains(PIPE_CONNECTIONS)) {
                 copy.putInt(PIPE_CONNECTIONS,
-                        GtceuNbtTransform.transformDirectionMask(copy.getInt(PIPE_CONNECTIONS), context.transform()));
+                        GTNbtTransform.transformDirectionMask(copy.getInt(PIPE_CONNECTIONS), context.transform()));
             }
             if (copy.contains(PIPE_BLOCKED_CONNECTIONS)) {
                 copy.putInt(
                         PIPE_BLOCKED_CONNECTIONS,
-                        GtceuNbtTransform.transformDirectionMask(copy.getInt(PIPE_BLOCKED_CONNECTIONS), context.transform())
+                        GTNbtTransform.transformDirectionMask(copy.getInt(PIPE_BLOCKED_CONNECTIONS), context.transform())
                 );
             }
             return copy;
@@ -165,7 +162,7 @@ public final class GtceuIntegration {
 
         @Override
         public CompoundTag transformBlockEntity(IntegrationContext.Transform context, CompoundTag blockEntity) {
-            return GtceuNbtTransform.transformPipeConnections(blockEntity, context.transform());
+            return GTNbtTransform.transformPipeConnections(blockEntity, context.transform());
         }
 
         @Override
@@ -239,12 +236,11 @@ public final class GtceuIntegration {
         }
     }
 
-    private static final class MachineIntegration implements BlockIntegration {
+    private record MachineIntegration() implements BlockIntegration {
 
         @Override
         public boolean dropCarriesContents(IntegrationContext.Removal context, ItemStack drop) {
-            return machine(context.blockEntity()) instanceof IDropSaveMachine saving
-                    && saving.saveBreak()
+            return context.blockEntity() instanceof MetaMachine
                     && drop.is(context.state().getBlock().asItem())
                     && !drop.isComponentsPatchEmpty();
         }
@@ -252,20 +248,20 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
             var tag = new CompoundTag();
-            var machine = machine(context.blockEntity());
-            if (machine == null) {
+            if (!(context.blockEntity() instanceof MetaMachine machine)) {
                 return tag;
             }
             tag.putString(FACING_DIR, directionToString(machine.getFrontFacing()));
-            if (machine instanceof IAutoOutputItem itemOutput && itemOutput.getOutputFacingItems() != null) {
-                tag.putString(ITEM_OUTPUT_SIDE, directionToString(itemOutput.getOutputFacingItems()));
-                tag.putBoolean(ITEM_AUTO_OUTPUT, itemOutput.isAutoOutputItems());
-                tag.putBoolean(ALLOW_ITEM_IN_FROM_OUT, itemOutput.isAllowInputFromOutputSideItems());
+            var output = machine.getTrait(AutoOutputTrait.class);
+            if (output != null && output.supportsAutoOutputItems() && output.getItemOutputDirection() != null) {
+                tag.putString(ITEM_OUTPUT_SIDE, directionToString(output.getItemOutputDirection()));
+                tag.putBoolean(ITEM_AUTO_OUTPUT, output.isAutoOutputItems());
+                tag.putBoolean(ALLOW_ITEM_IN_FROM_OUT, output.allowsItemInputFromOutputSide());
             }
-            if (machine instanceof IAutoOutputFluid fluidOutput && fluidOutput.getOutputFacingFluids() != null) {
-                tag.putString(FLUID_OUTPUT_SIDE, directionToString(fluidOutput.getOutputFacingFluids()));
-                tag.putBoolean(FLUID_AUTO_OUTPUT, fluidOutput.isAutoOutputFluids());
-                tag.putBoolean(ALLOW_FLUID_IN_FROM_OUT, fluidOutput.isAllowInputFromOutputSideFluids());
+            if (output != null && output.supportsAutoOutputFluids() && output.getFluidOutputDirection() != null) {
+                tag.putString(FLUID_OUTPUT_SIDE, directionToString(output.getFluidOutputDirection()));
+                tag.putBoolean(FLUID_AUTO_OUTPUT, output.isAutoOutputFluids());
+                tag.putBoolean(ALLOW_FLUID_IN_FROM_OUT, output.allowsFluidInputFromOutputSide());
             }
             if (machine instanceof SteamWorkableMachine steam && steam.getOutputFacing() != null) {
                 tag.putString(STEAM_OUTPUT_SIDE, directionToString(steam.getOutputFacing()));
@@ -275,8 +271,7 @@ public final class GtceuIntegration {
 
         @Override
         public ApplyResult apply(IntegrationContext.Apply context, CompoundTag tag) {
-            var machine = machine(context.blockEntity());
-            if (machine == null) {
+            if (!(context.blockEntity() instanceof MetaMachine machine)) {
                 return ApplyResult.REJECTED_UNCHANGED;
             }
             if (tag.contains(FACING_DIR)) {
@@ -285,26 +280,25 @@ public final class GtceuIntegration {
                     machine.setFrontFacing(direction);
                 }
             }
-            if (machine instanceof IAutoOutputItem itemOutput) {
+            var output = machine.getTrait(AutoOutputTrait.class);
+            if (output != null) {
                 if (tag.contains(ITEM_OUTPUT_SIDE)) {
-                    itemOutput.setOutputFacingItems(stringToDirection(tag.getString(ITEM_OUTPUT_SIDE)));
+                    output.setItemOutputDirection(stringToDirection(tag.getString(ITEM_OUTPUT_SIDE)));
                 }
                 if (tag.contains(ITEM_AUTO_OUTPUT)) {
-                    itemOutput.setAutoOutputItems(tag.getBoolean(ITEM_AUTO_OUTPUT));
+                    output.setAllowAutoOutputItems(tag.getBoolean(ITEM_AUTO_OUTPUT));
                 }
-                if (tag.contains(ALLOW_ITEM_IN_FROM_OUT)) {
-                    itemOutput.setAllowInputFromOutputSideItems(tag.getBoolean(ALLOW_ITEM_IN_FROM_OUT));
+                if (tag.contains(ALLOW_ITEM_IN_FROM_OUT) && output.supportsAutoOutputItems()) {
+                    output.setAllowItemInputFromOutputSide(tag.getBoolean(ALLOW_ITEM_IN_FROM_OUT));
                 }
-            }
-            if (machine instanceof IAutoOutputFluid fluidOutput) {
                 if (tag.contains(FLUID_OUTPUT_SIDE)) {
-                    fluidOutput.setOutputFacingFluids(stringToDirection(tag.getString(FLUID_OUTPUT_SIDE)));
+                    output.setFluidOutputDirection(stringToDirection(tag.getString(FLUID_OUTPUT_SIDE)));
                 }
                 if (tag.contains(FLUID_AUTO_OUTPUT)) {
-                    fluidOutput.setAutoOutputFluids(tag.getBoolean(FLUID_AUTO_OUTPUT));
+                    output.setAllowAutoOutputFluids(tag.getBoolean(FLUID_AUTO_OUTPUT));
                 }
-                if (tag.contains(ALLOW_FLUID_IN_FROM_OUT)) {
-                    fluidOutput.setAllowInputFromOutputSideFluids(tag.getBoolean(ALLOW_FLUID_IN_FROM_OUT));
+                if (tag.contains(ALLOW_FLUID_IN_FROM_OUT) && output.supportsAutoOutputFluids()) {
+                    output.setAllowFluidInputFromOutputSide(tag.getBoolean(ALLOW_FLUID_IN_FROM_OUT));
                 }
             }
             if (machine instanceof SteamWorkableMachine steam && tag.contains(STEAM_OUTPUT_SIDE)) {
@@ -343,7 +337,7 @@ public final class GtceuIntegration {
             if (!state.hasProperty(GTBlockStateProperties.UPWARDS_FACING)) {
                 return result;
             }
-            var upwards = GtceuNbtTransform.transformUpwardsFacing(
+            var upwards = GTNbtTransform.transformUpwardsFacing(
                     front, state.getValue(GTBlockStateProperties.UPWARDS_FACING), context.transform());
             return result.setValue(GTBlockStateProperties.UPWARDS_FACING, upwards);
         }
@@ -351,7 +345,7 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag transformBlockEntity(IntegrationContext.Transform context, CompoundTag blockEntity) {
             return transformsBlockEntity(context.state())
-                    ? GtceuNbtTransform.transformOutputFacings(blockEntity, context.transform())
+                    ? GTNbtTransform.transformOutputFacings(blockEntity, context.transform())
                     : blockEntity;
         }
 
@@ -366,7 +360,7 @@ public final class GtceuIntegration {
         }
     }
 
-    private static final class MufflerIntegration implements BlockIntegration {
+    private record MufflerIntegration() implements BlockIntegration {
 
         @Override
         public boolean transformsBlockEntity(BlockState state) {
@@ -376,8 +370,7 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
             var tag = new CompoundTag();
-            var machine = machine(context.blockEntity());
-            if (machine instanceof IMufflableMachine mufflable) {
+            if (context.blockEntity() instanceof IMufflableMachine mufflable) {
                 tag.putBoolean(MUFFLED, mufflable.isMuffled());
             }
             return tag;
@@ -385,10 +378,9 @@ public final class GtceuIntegration {
 
         @Override
         public ApplyResult apply(IntegrationContext.Apply context, CompoundTag payload) {
-            var machine = machine(context.blockEntity());
-            if (payload.contains(MUFFLED) && machine instanceof IMufflableMachine mufflable) {
+            if (payload.contains(MUFFLED) && context.blockEntity() instanceof IMufflableMachine mufflable) {
                 mufflable.setMuffled(payload.getBoolean(MUFFLED));
-                updateMachine(machine);
+                updateMachine(context.blockEntity());
             }
             return ApplyResult.APPLIED;
         }
@@ -399,7 +391,7 @@ public final class GtceuIntegration {
         }
     }
 
-    private static final class CoverIntegration implements BlockIntegration {
+    private record CoverIntegration() implements BlockIntegration {
 
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
@@ -422,7 +414,7 @@ public final class GtceuIntegration {
                 }
                 coverTag.putString(COVER_ID_TAG, id.toString());
                 coverTag.put(COVER_ITEM, cover.getAttachItem().saveOptional(registries));
-                coverTag.put(COVER_DATA, IManagedAccessor.readManagedFields(cover, new CompoundTag(), registries));
+                coverTag.put(COVER_DATA, cover.getSyncDataHolder().serializeNBT(registries));
                 var additional = new ListTag();
                 cover.getAdditionalDrops().forEach(stack -> additional.add(stack.saveOptional(registries)));
                 coverTag.put(COVER_ADDITIONAL, additional);
@@ -475,12 +467,12 @@ public final class GtceuIntegration {
             if (coverable == null || context.purpose() == PlacementPurpose.RECONFIGURE) {
                 return ApplyResult.REJECTED_UNCHANGED;
             }
+            var registries = context.level().registryAccess();
             if (context.purpose() == PlacementPurpose.MOVE_TRANSFER) {
-                return matchesTransferred(context.level().registryAccess(), coverable, payload)
+                return matchesTransferred(registries, coverable, payload)
                         ? ApplyResult.APPLIED
                         : ApplyResult.REJECTED_UNCHANGED;
             }
-            var registries = context.level().registryAccess();
             boolean partiallyApplied = false;
             var covers = payload.getCompound(COVERS);
             for (var sideName : covers.getAllKeys()) {
@@ -497,12 +489,8 @@ public final class GtceuIntegration {
                 if (coverable.placeCoverOnSide(side, stack, definition, context.player())) {
                     var cover = coverable.getCoverAtSide(side);
                     if (cover != null) {
-                        IManagedAccessor.writePersistedFields(
-                                coverTag.getCompound(COVER_DATA),
-                                cover.getSyncStorage().getPersistedFields(),
-                                registries
-                        );
-                        cover.onChanged();
+                        cover.getSyncDataHolder().deserializeNBT(registries, coverTag.getCompound(COVER_DATA));
+                        cover.getSyncDataHolder().resyncAllFields();
                         cover.scheduleRenderUpdate();
                     }
                 } else {
@@ -513,9 +501,8 @@ public final class GtceuIntegration {
             coverable.notifyBlockUpdate();
             coverable.scheduleNeighborShapeUpdate();
             var blockEntity = context.blockEntity();
-            var machine = machine(blockEntity);
-            if (machine != null) {
-                updateMachine(machine);
+            if (blockEntity instanceof MetaMachine) {
+                updateMachine(blockEntity);
             } else if (blockEntity instanceof PipeBlockEntity<?, ?> pipe) {
                 context.afterTick(() -> finalizePipeConnections(pipe));
             } else if (blockEntity != null) {
@@ -539,7 +526,7 @@ public final class GtceuIntegration {
                 var side = Direction.byName(sideName);
                 if (side != null) {
                     var cover = covers.getCompound(sideName).copy();
-                    cover.put(COVER_DATA, GtceuNbtTransform.transformCoverData(
+                    cover.put(COVER_DATA, GTNbtTransform.transformCoverData(
                             cover.getString(COVER_ID_TAG), cover.getCompound(COVER_DATA), context.transform()));
                     transformed.put(context.transform().transform(side).getName(), cover);
                 }
@@ -551,7 +538,7 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag transformBlockEntity(IntegrationContext.Transform context, CompoundTag blockEntity) {
             return transformsBlockEntity(context.state())
-                    ? GtceuNbtTransform.transformCovers(blockEntity, context.transform())
+                    ? GTNbtTransform.transformCovers(blockEntity, context.transform())
                     : blockEntity;
         }
 
@@ -562,7 +549,7 @@ public final class GtceuIntegration {
         }
     }
 
-    private static final class CircuitIntegration implements BlockIntegration {
+    private record CircuitIntegration() implements BlockIntegration {
 
         @Override
         public boolean transformsBlockEntity(BlockState state) {
@@ -572,15 +559,15 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
             var tag = new CompoundTag();
-            var machine = machine(context.blockEntity());
-            if (!(machine instanceof IHasCircuitSlot circuitMachine) || !circuitMachine.isCircuitSlotEnabled()) {
+            var circuit = circuitSlot(context.blockEntity());
+            if (circuit == null || !circuit.isEnabled()) {
                 return tag;
             }
-            int circuit = IntCircuitBehaviour.getCircuitConfiguration(circuitMachine.getCircuitInventory().getStackInSlot(0));
-            if (circuit != 0) {
-                tag.putInt(CIRCUIT, circuit);
-                tag.put(CIRCUIT_ITEM, circuitMachine.getCircuitInventory().getStackInSlot(0)
-                        .saveOptional(context.level().registryAccess()));
+            var stack = circuit.storage.getStackInSlot(0);
+            int configuration = IntCircuitBehaviour.getCircuitConfiguration(stack);
+            if (configuration != 0) {
+                tag.putInt(CIRCUIT, configuration);
+                tag.put(CIRCUIT_ITEM, stack.saveOptional(context.level().registryAccess()));
             }
             return tag;
         }
@@ -611,19 +598,23 @@ public final class GtceuIntegration {
             if (context.purpose() == PlacementPurpose.RECONFIGURE) {
                 return ApplyResult.REJECTED_UNCHANGED;
             }
-            var machine = machine(context.blockEntity());
-            if (payload.contains(CIRCUIT) && machine instanceof IHasCircuitSlot circuitMachine) {
-                circuitMachine.getCircuitInventory().setStackInSlot(0, IntCircuitBehaviour.stack(payload.getInt(CIRCUIT)));
-                updateMachine(machine);
+            var circuit = circuitSlot(context.blockEntity());
+            if (payload.contains(CIRCUIT) && circuit != null) {
+                circuit.storage.setStackInSlot(0, IntCircuitBehaviour.stack(payload.getInt(CIRCUIT)));
+                updateMachine(context.blockEntity());
             } else if (payload.contains(CIRCUIT)) {
                 context.refund(ItemStack.parseOptional(context.level().registryAccess(), payload.getCompound(FUNDED_ITEM)));
                 return ApplyResult.PARTIAL_RESOURCES_SETTLED;
             }
             return ApplyResult.APPLIED;
         }
+
+        private static @Nullable ProgrammableCircuitSlotTrait circuitSlot(@Nullable BlockEntity blockEntity) {
+            return blockEntity instanceof MetaMachine machine ? machine.getTrait(ProgrammableCircuitSlotTrait.class) : null;
+        }
     }
 
-    private static final class PaintIntegration implements BlockIntegration {
+    private record PaintIntegration() implements BlockIntegration {
 
         @Override
         public boolean transformsBlockEntity(BlockState state) {
@@ -633,8 +624,7 @@ public final class GtceuIntegration {
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
             var tag = new CompoundTag();
-            var paintable = paintable(context.blockEntity());
-            if (paintable != null) {
+            if (context.blockEntity() instanceof IPaintable paintable) {
                 tag.putInt(PAINTING_COLOR, paintable.getPaintingColor());
             }
             return tag;
@@ -646,8 +636,7 @@ public final class GtceuIntegration {
                 return new CompoundTag();
             }
             var tag = new CompoundTag();
-            var paintable = paintable(context.blockEntity());
-            if (paintable != null) {
+            if (context.blockEntity() instanceof IPaintable paintable) {
                 tag.putInt(PAINTING_COLOR, paintable.getPaintingColor());
             }
             return tag;
@@ -656,13 +645,11 @@ public final class GtceuIntegration {
         @Override
         public ApplyResult apply(IntegrationContext.Apply context, CompoundTag payload) {
             var blockEntity = context.blockEntity();
-            var paintable = paintable(blockEntity);
-            if (payload.contains(PAINTING_COLOR) && paintable != null) {
+            if (payload.contains(PAINTING_COLOR) && blockEntity instanceof IPaintable paintable) {
                 paintable.setPaintingColor(payload.getInt(PAINTING_COLOR));
                 blockEntity.setChanged();
-                var machine = machine(blockEntity);
-                if (machine != null) {
-                    updateMachine(machine);
+                if (blockEntity instanceof MetaMachine) {
+                    updateMachine(blockEntity);
                 } else if (blockEntity instanceof PipeBlockEntity<?, ?> pipe) {
                     context.afterTick(() -> finalizePipeConnections(pipe));
                 }
@@ -676,7 +663,7 @@ public final class GtceuIntegration {
         }
     }
 
-    private static final class MaintenanceHatchIntegration implements BlockIntegration {
+    private record MaintenanceHatchIntegration() implements BlockIntegration {
 
         @Override
         public boolean transformsBlockEntity(BlockState state) {
@@ -685,7 +672,7 @@ public final class GtceuIntegration {
 
         @Override
         public CompoundTag capture(IntegrationContext.Capture context) {
-            return machine(context.blockEntity()) instanceof MaintenanceHatchPartMachine hatch
+            return context.blockEntity() instanceof MaintenanceHatchPartMachine hatch
                     ? captureMaintenance(context.level().registryAccess(), hatch)
                     : new CompoundTag();
         }
@@ -710,7 +697,7 @@ public final class GtceuIntegration {
 
         @Override
         public ApplyResult apply(IntegrationContext.Apply context, CompoundTag payload) {
-            if (!(machine(context.blockEntity()) instanceof MaintenanceHatchPartMachine hatch)) {
+            if (!(context.blockEntity() instanceof MaintenanceHatchPartMachine hatch)) {
                 return ApplyResult.REJECTED_UNCHANGED;
             }
             var registries = context.level().registryAccess();
@@ -721,14 +708,13 @@ public final class GtceuIntegration {
                     && !Objects.equals(captureMaintenance(registries, hatch).get(MAINTENANCE_TAPE), payload.get(MAINTENANCE_TAPE))) {
                 return ApplyResult.REJECTED_UNCHANGED;
             }
-            var accessor = (AccessorMaintenanceHatchPartMachine) hatch;
             if (hatch.isConfigurable() && payload.contains(DURATION_MULTIPLIER, Tag.TAG_FLOAT)) {
-                accessor.setDurationMultiplier(Mth.clamp(payload.getFloat(DURATION_MULTIPLIER), 0.9f, 1.1f));
+                hatch.setDurationMultiplier(Mth.clamp(payload.getFloat(DURATION_MULTIPLIER), 0.9f, 1.1f));
             }
             var result = ApplyResult.APPLIED;
             if (payload.contains(FUNDED_ITEM, Tag.TAG_COMPOUND)) {
                 var funded = ItemStack.parseOptional(registries, payload.getCompound(FUNDED_ITEM));
-                var remainder = accessor.getItemStackHandler().insertItem(0, funded, false);
+                var remainder = tapeSlot(hatch).storage.insertItem(0, funded, false);
                 if (!remainder.isEmpty()) {
                     context.refund(remainder);
                     result = ApplyResult.PARTIAL_RESOURCES_SETTLED;
@@ -746,7 +732,7 @@ public final class GtceuIntegration {
 
     private static CompoundTag captureMaintenance(HolderLookup.Provider registries, MaintenanceHatchPartMachine hatch) {
         var tag = new CompoundTag();
-        var tape = ((AccessorMaintenanceHatchPartMachine) hatch).getItemStackHandler().getStackInSlot(0);
+        var tape = tapeSlot(hatch).storage.getStackInSlot(0);
         if (!tape.isEmpty()) {
             tag.put(MAINTENANCE_TAPE, tape.save(registries));
         }
@@ -754,6 +740,10 @@ public final class GtceuIntegration {
             tag.putFloat(DURATION_MULTIPLIER, hatch.getDurationMultiplier());
         }
         return tag;
+    }
+
+    private static NotifiableItemStackHandler tapeSlot(MaintenanceHatchPartMachine hatch) {
+        return hatch.getTraitOrThrow(NotifiableItemStackHandler.class);
     }
 
     private static CompoundTag capturePipe(BlockEntity blockEntity) {
@@ -783,9 +773,8 @@ public final class GtceuIntegration {
         if (level == null || pipe.isRemoved() || level.getBlockEntity(pos) != pipe) {
             return;
         }
-        pipe.getRootStorage().markAllDirty();
+        pipe.getSyncDataHolder().resyncAllFields();
         pipe.setChanged();
-        pipe.syncNow(true);
         pipe.notifyBlockUpdate();
         level.sendBlockUpdated(pos, pipe.getBlockState(), pipe.getBlockState(), Block.UPDATE_CLIENTS);
         for (var direction : Direction.values()) {
@@ -794,23 +783,11 @@ public final class GtceuIntegration {
         pipe.scheduleRenderUpdate();
     }
 
-    private static MetaMachine machine(BlockEntity blockEntity) {
-        return blockEntity instanceof MetaMachineBlockEntity machineBlockEntity ? machineBlockEntity.getMetaMachine() : null;
-    }
-
-    private static ICoverable coverable(BlockEntity blockEntity) {
+    private static @Nullable ICoverable coverable(@Nullable BlockEntity blockEntity) {
         if (blockEntity instanceof PipeBlockEntity<?, ?> pipe) {
             return pipe.getCoverContainer();
         }
-        var machine = machine(blockEntity);
-        return machine == null ? null : machine.getCoverContainer();
-    }
-
-    private static IPaintable paintable(BlockEntity blockEntity) {
-        if (blockEntity instanceof IPaintable paintable) {
-            return paintable;
-        }
-        return machine(blockEntity);
+        return blockEntity instanceof MetaMachine machine ? machine.getCoverContainer() : null;
     }
 
     private static boolean matchesTransferred(HolderLookup.Provider registries, ICoverable coverable, CompoundTag payload) {
@@ -829,8 +806,7 @@ public final class GtceuIntegration {
             }
             var id = GTRegistries.COVERS.getKey(cover.coverDefinition);
             if (id == null || !id.toString().equals(expected.getString(COVER_ID_TAG))
-                    || !IManagedAccessor.readManagedFields(cover, new CompoundTag(), registries)
-                            .equals(expected.getCompound(COVER_DATA))) {
+                    || !cover.getSyncDataHolder().serializeNBT(registries).equals(expected.getCompound(COVER_DATA))) {
                 return false;
             }
         }
@@ -852,15 +828,19 @@ public final class GtceuIntegration {
         for (var key : List.copyOf(tag.getAllKeys())) {
             var value = tag.get(key);
             if (value instanceof CompoundTag compound) {
-                var stack = ItemStack.CODEC.parse(ops, compound).result().orElse(ItemStack.EMPTY);
-                if (!stack.isEmpty() && InventoryUtil.isSameMaterial(stack, expected)) {
+                if (isStack(ops, compound, expected)) {
                     tag.remove(key);
                 } else {
                     removeStackFromTag(registries, compound, expected);
                 }
             } else if (value instanceof ListTag list) {
-                for (var child : list) {
-                    if (child instanceof CompoundTag compound) {
+                for (int index = list.size() - 1; index >= 0; index--) {
+                    if (!(list.get(index) instanceof CompoundTag compound)) {
+                        continue;
+                    }
+                    if (isStack(ops, compound, expected)) {
+                        list.remove(index);
+                    } else {
                         removeStackFromTag(registries, compound, expected);
                     }
                 }
@@ -868,25 +848,31 @@ public final class GtceuIntegration {
         }
     }
 
+    private static boolean isStack(DynamicOps<Tag> ops, CompoundTag tag, ItemStack expected) {
+        var stack = ItemStack.CODEC.parse(ops, tag).result().orElse(ItemStack.EMPTY);
+        return !stack.isEmpty() && InventoryUtil.isSameMaterial(stack, expected);
+    }
+
     private static HolderLookup.Provider registries() {
         var server = ServerLifecycleHooks.getCurrentServer();
         return server == null ? RegistryAccess.EMPTY : server.registryAccess();
     }
 
-    private static void updateMachine(MetaMachine machine) {
-        if (machine == null) {
+    private static void updateMachine(@Nullable BlockEntity blockEntity) {
+        if (!(blockEntity instanceof MetaMachine machine)) {
             return;
         }
-        machine.markDirty();
+        machine.setChanged();
+        machine.markAsChanged();
         machine.notifyBlockUpdate();
         machine.scheduleRenderUpdate();
     }
 
-    private static String directionToString(Direction direction) {
+    private static String directionToString(@Nullable Direction direction) {
         return direction == null ? NONE_DIRECTION : direction.getName();
     }
 
-    private static Direction stringToDirection(String value) {
+    private static @Nullable Direction stringToDirection(String value) {
         return NONE_DIRECTION.equalsIgnoreCase(value) ? null : Direction.byName(value);
     }
 
