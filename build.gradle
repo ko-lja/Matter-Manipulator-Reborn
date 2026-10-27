@@ -6,8 +6,18 @@ plugins {
     id "net.neoforged.moddev.legacyforge" version "2.0.86"
 }
 
+def modVersion = mod_version
+def releaseTag = providers.environmentVariable("RELEASE_TAG").orNull
+if (releaseTag) {
+    def match = releaseTag =~ /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\+(.+)$/
+    if (!match.matches() || match.group(2) != minecraft_version) {
+        throw new GradleException("Release tag $releaseTag must look like v<version>+$minecraft_version")
+    }
+    modVersion = match.group(1)
+}
+
 group = mod_group_id
-version = "${mod_version}+${minecraft_version}"
+version = "${modVersion}+${minecraft_version}"
 
 base {
     archivesName = mod_id
@@ -227,7 +237,7 @@ tasks.named("processResources", ProcessResources).configure {
             mod_id           : mod_id,
             mod_name         : mod_name,
             mod_license      : mod_license,
-            mod_version      : mod_version,
+            mod_version      : modVersion,
             mod_authors      : mod_authors,
             mod_description  : mod_description
     ]
