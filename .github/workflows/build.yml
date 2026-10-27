@@ -20,6 +20,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Use the version of the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          minecraft_version=$(sed -n 's/^minecraft_version=//p' gradle.properties | tr -d '\r')
+          tag=$(gh release list --exclude-drafts --limit 100 --json tagName \
+            --jq ".[].tagName | select(endswith(\"+$minecraft_version\"))" | sort -V | tail -n 1)
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+
       - run: ./gradlew build
 
       - name: Check that generated resources are up to date
