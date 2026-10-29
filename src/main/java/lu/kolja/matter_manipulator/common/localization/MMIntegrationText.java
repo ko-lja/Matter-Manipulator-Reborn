@@ -27,7 +27,13 @@ public enum MMIntegrationText implements LocalizationEnum {
             "This Project Red part can't be used in cable mode"),
     SKIP_PROJECTRED_NO_WIRE_SURFACE("matter_manipulator.skip.projectred.no_wire_surface", "no surface for the wire"),
     TRANSFORM_CB_MULTIPART_CANNOT_FACE("matter_manipulator.transform.cb_multipart.cannot_face",
-            "its %s cannot face that way");
+            "its %s cannot face that way"),
+    SKIP_MEKANISM_BOUNDING_OBSTRUCTED("matter_manipulator.skip.mekanism.bounding_obstructed",
+            "the space the rest of the machine takes up is occupied"),
+    REFUSAL_MEKANISM_BOUNDING("matter_manipulator.refusal.mekanism.bounding",
+            "part of a larger Mekanism machine, remove the machine itself"),
+    BLOCK_COST_MEKANISM_BOUNDING("matter_manipulator.block_cost.mekanism.bounding",
+            "the Mekanism machine it belongs to places it");
 
     @Getter(onMethod_ = @Override)
     private final String translationKey;

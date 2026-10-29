@@ -1,6 +1,6 @@
 # Matter Manipulator
 
-An unofficial Forge 1.20.1 port of [Matter Manipulator](https://github.com/RecursivePineapple/MatterManipulator) by RecursivePineapple, originally made for GTNH on 1.7.10. This isn't the original mod, so please report issues here, and not to the original author.
+An unofficial Forge 1.20.1 & NeoForge 1.21.1/26.1 port of [Matter Manipulator](https://github.com/RecursivePineapple/MatterManipulator) by RecursivePineapple, originally made for GTNH on 1.7.10. This isn't the original mod, so please report issues here, and not to the original author.
 
 The Matter Manipulator is basically WorldEdit for survival. It's a handheld tool that can build large or repetitive structures for you without any hassle.
 
@@ -34,6 +34,7 @@ Machines, cables, their settings, and filters from the mods below are handled pr
 | [LaserIO](https://www.curseforge.com/minecraft/mc-mods/laserio) | ✅ | ✅ | ✅ |
 | [LaserIO Unofficial Extended Life](https://www.curseforge.com/projects/1168178) | ✅ | ❌ | ❌ |
 | [LittleTiles](https://www.curseforge.com/minecraft/mc-mods/littletiles) | ✅ | ✅ | ❌ |
+| [Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) and [Mekanism Generators](https://www.curseforge.com/minecraft/mc-mods/mekanism-generators) | ✅ | ✅ | ❌ |
 | [Project Red](https://www.curseforge.com/minecraft/mc-mods/project-red-transmission) | ✅ | ✅ | ❌ |
 | [Rechiseled](https://www.curseforge.com/minecraft/mc-mods/rechiseled) | ✅ | ✅ | ✅ |
 

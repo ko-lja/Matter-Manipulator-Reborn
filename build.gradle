@@ -111,6 +111,7 @@ repositories {
         url = uri("https://modmaven.dev/")
         content {
             includeGroup "appeng"
+            includeGroup "mekanism"
         }
     }
     maven {
@@ -184,6 +185,8 @@ dependencies {
     implement("curse.maven:creativecore-257814:8304882")
     implement("curse.maven:littletiles-257818:6610285")
     implement("curse.maven:domum-ornamentum-527361:7585567")
+    implement("mekanism:Mekanism:1.20.1-10.4.16.80")
+    implement("mekanism:Mekanism:1.20.1-10.4.16.80:generators")
     implement("curse.maven:rechiseled-558998:8301383")
     implement("curse.maven:supermartijn642s-core-lib-454372:7521769")
     implement("curse.maven:supermartijn642s-config-lib-438332:4715408")

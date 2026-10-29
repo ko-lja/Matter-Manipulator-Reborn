@@ -7,6 +7,8 @@ import lu.kolja.matter_manipulator.common.integration.fluxnetworks.FluxNetworksI
 import lu.kolja.matter_manipulator.common.integration.framedblocks.FramedBlocksIntegration;
 import lu.kolja.matter_manipulator.common.integration.laserio.LaserIoIntegration;
 import lu.kolja.matter_manipulator.common.integration.littletiles.LittleTilesIntegration;
+import lu.kolja.matter_manipulator.common.integration.mekanism.MekanismIntegration;
+import lu.kolja.matter_manipulator.common.integration.mekanism.generators.MekanismGeneratorsIntegration;
 import lu.kolja.matter_manipulator.common.integration.projectred.ProjectRedIntegration;
 import lu.kolja.matter_manipulator.common.integration.rechiseled.RechiseledIntegration;
 import lu.kolja.matter_manipulator.api.IntegrationContext;
@@ -82,6 +84,12 @@ public final class IntegrationDispatcher {
             if (mods.isLoaded("domum_ornamentum")) {
                 DomumOrnamentumIntegration.register(builder);
             }
+            if (mods.isLoaded("mekanism")) {
+                MekanismIntegration.register(builder);
+            }
+            if (mods.isLoaded("mekanismgenerators")) {
+                MekanismGeneratorsIntegration.register(builder);
+            }
             registrations.forEach(registration -> registration.accept(builder));
             registry = builder.build();
             generation++;
@@ -91,7 +99,7 @@ public final class IntegrationDispatcher {
         var mods = ModList.get();
         MatterManipulator.LOGGER.info(
                 "Matter Manipulator integrations initialized: AE2={}, GTCEu={}, Flux={}, FramedBlocks={}, LaserIO={}, "
-                        + "ProjectRed={}, LittleTiles={}, Rechiseled={}, DomumOrnamentum={}",
+                        + "ProjectRed={}, LittleTiles={}, Rechiseled={}, DomumOrnamentum={}, Mekanism={}, MekanismGenerators={}",
                 mods.isLoaded("ae2"),
                 mods.isLoaded("gtceu"),
                 mods.isLoaded("fluxnetworks"),
@@ -100,7 +108,9 @@ public final class IntegrationDispatcher {
                 projectRedLoaded(mods),
                 mods.isLoaded("littletiles"),
                 mods.isLoaded("rechiseled"),
-                mods.isLoaded("domum_ornamentum")
+                mods.isLoaded("domum_ornamentum"),
+                mods.isLoaded("mekanism"),
+                mods.isLoaded("mekanismgenerators")
         );
     }
 

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import lu.kolja.matter_manipulator.client.integration.ae2.Ae2ClientIntegration;
 import lu.kolja.matter_manipulator.api.client.PreviewDetail;
 import lu.kolja.matter_manipulator.client.integration.domumornamentum.DomumOrnamentumClientIntegration;
+import lu.kolja.matter_manipulator.client.integration.mekanism.MekanismClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.fluxnetworks.FluxNetworksClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.framedblocks.FramedBlocksClientIntegration;
 import lu.kolja.matter_manipulator.client.integration.gtceu.GTClientIntegration;
@@ -71,6 +72,9 @@ public final class ClientIntegrationDispatcher {
             }
             if (mods.isLoaded("domum_ornamentum")) {
                 DomumOrnamentumClientIntegration.register(builder);
+            }
+            if (mods.isLoaded("mekanism")) {
+                MekanismClientIntegration.register(builder);
             }
             registrations.forEach(registration -> registration.accept(builder));
             registry = builder.build();
