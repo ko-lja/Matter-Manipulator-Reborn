@@ -2,16 +2,7 @@ package lu.kolja.matter_manipulator.client.integration;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import lu.kolja.matter_manipulator.client.integration.ae2.Ae2ClientIntegration;
 import lu.kolja.matter_manipulator.api.client.PreviewDetail;
-import lu.kolja.matter_manipulator.client.integration.domumornamentum.DomumOrnamentumClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.mekanism.MekanismClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.fluxnetworks.FluxNetworksClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.framedblocks.FramedBlocksClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.gtceu.GTClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.laserio.LaserIoClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.littletiles.LittleTilesClientIntegration;
-import lu.kolja.matter_manipulator.client.integration.projectred.ProjectRedClientIntegration;
 import lu.kolja.matter_manipulator.api.DirectionTransform;
 import lu.kolja.matter_manipulator.common.manipulator.ToolTransform;
 import lu.kolja.matter_manipulator.common.state.CapturedBlock;
@@ -49,32 +40,10 @@ public final class ClientIntegrationDispatcher {
         var builder = ClientIntegrationRegistry.builder();
         try {
             var mods = ModList.get();
-            if (mods.isLoaded("ae2")) {
-                Ae2ClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("gtceu")) {
-                GTClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("fluxnetworks")) {
-                FluxNetworksClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("framedblocks")) {
-                FramedBlocksClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("laserio")) {
-                LaserIoClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("cb_multipart")) {
-                ProjectRedClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("littletiles")) {
-                LittleTilesClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("domum_ornamentum")) {
-                DomumOrnamentumClientIntegration.register(builder);
-            }
-            if (mods.isLoaded("mekanism")) {
-                MekanismClientIntegration.register(builder);
+            for (var module : ClientIntegrationModule.values()) {
+                if (module.available(mods)) {
+                    module.register(builder);
+                }
             }
             registrations.forEach(registration -> registration.accept(builder));
             registry = builder.build();

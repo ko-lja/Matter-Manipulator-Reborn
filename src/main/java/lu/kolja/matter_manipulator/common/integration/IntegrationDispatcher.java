@@ -2,21 +2,11 @@ package lu.kolja.matter_manipulator.common.integration;
 
 import lu.kolja.matter_manipulator.MatterManipulator;
 import lu.kolja.matter_manipulator.common.integration.ae2.Ae2Integration;
-import lu.kolja.matter_manipulator.common.integration.domumornamentum.DomumOrnamentumIntegration;
-import lu.kolja.matter_manipulator.common.integration.fluxnetworks.FluxNetworksIntegration;
-import lu.kolja.matter_manipulator.common.integration.framedblocks.FramedBlocksIntegration;
-import lu.kolja.matter_manipulator.common.integration.laserio.LaserIoIntegration;
-import lu.kolja.matter_manipulator.common.integration.littletiles.LittleTilesIntegration;
-import lu.kolja.matter_manipulator.common.integration.mekanism.MekanismIntegration;
-import lu.kolja.matter_manipulator.common.integration.mekanism.generators.MekanismGeneratorsIntegration;
-import lu.kolja.matter_manipulator.common.integration.projectred.ProjectRedIntegration;
-import lu.kolja.matter_manipulator.common.integration.rechiseled.RechiseledIntegration;
 import lu.kolja.matter_manipulator.api.IntegrationContext;
 import lu.kolja.matter_manipulator.api.ItemDemand;
 import lu.kolja.matter_manipulator.api.ItemRequirement;
 import lu.kolja.matter_manipulator.api.PlacementRequirements;
 import lu.kolja.matter_manipulator.api.PlacementPurpose;
-import lu.kolja.matter_manipulator.common.integration.gtceu.GTIntegration;
 import lu.kolja.matter_manipulator.common.manipulator.ToolTransform;
 import lu.kolja.matter_manipulator.common.state.CapturedBlock;
 import net.minecraft.core.BlockPos;
@@ -53,76 +43,24 @@ public final class IntegrationDispatcher {
         if (registry != null) {
             return;
         }
+        var loaded = IntegrationModule.loaded(ModList.get());
         var registrations = IntegrationRegistration.close();
         var builder = IntegrationRegistry.builder();
         try {
-            var mods = ModList.get();
-            if (mods.isLoaded("ae2")) {
-                Ae2Integration.register(builder);
-            }
-            if (mods.isLoaded("gtceu")) {
-                GTIntegration.register(builder);
-            }
-            if (mods.isLoaded("fluxnetworks")) {
-                FluxNetworksIntegration.register(builder);
-            }
-            if (mods.isLoaded("framedblocks")) {
-                FramedBlocksIntegration.register(builder);
-            }
-            if (mods.isLoaded("laserio")) {
-                LaserIoIntegration.register(builder);
-            }
-            if (projectRedLoaded(mods)) {
-                ProjectRedIntegration.register(builder);
-            }
-            if (mods.isLoaded("littletiles")) {
-                LittleTilesIntegration.register(builder);
-            }
-            if (mods.isLoaded("rechiseled")) {
-                RechiseledIntegration.register(builder);
-            }
-            if (mods.isLoaded("domum_ornamentum")) {
-                DomumOrnamentumIntegration.register(builder);
-            }
-            if (mods.isLoaded("mekanism")) {
-                MekanismIntegration.register(builder);
-            }
-            if (mods.isLoaded("mekanismgenerators")) {
-                MekanismGeneratorsIntegration.register(builder);
-            }
+            loaded.forEach(module -> module.register(builder));
             registrations.forEach(registration -> registration.accept(builder));
             registry = builder.build();
             generation++;
         } finally {
             builder.freeze();
         }
-        var mods = ModList.get();
-        MatterManipulator.LOGGER.info(
-                "Matter Manipulator integrations initialized: AE2={}, GTCEu={}, Flux={}, FramedBlocks={}, LaserIO={}, "
-                        + "ProjectRed={}, LittleTiles={}, Rechiseled={}, DomumOrnamentum={}, Mekanism={}, MekanismGenerators={}",
-                mods.isLoaded("ae2"),
-                mods.isLoaded("gtceu"),
-                mods.isLoaded("fluxnetworks"),
-                mods.isLoaded("framedblocks"),
-                mods.isLoaded("laserio"),
-                projectRedLoaded(mods),
-                mods.isLoaded("littletiles"),
-                mods.isLoaded("rechiseled"),
-                mods.isLoaded("domum_ornamentum"),
-                mods.isLoaded("mekanism"),
-                mods.isLoaded("mekanismgenerators")
-        );
-    }
-
-    private static boolean projectRedLoaded(ModList mods) {
-        return mods.isLoaded("cb_multipart") && mods.isLoaded("projectred_core");
+        MatterManipulator.LOGGER.info("Matter Manipulator integrations initialized: {}", loaded);
     }
 
     public static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             initialize();
-            var mods = ModList.get();
-            if (mods.isLoaded("ae2")) {
+            if (IntegrationModule.AE2.available(ModList.get())) {
                 Ae2Integration.commonSetup();
             }
         });
