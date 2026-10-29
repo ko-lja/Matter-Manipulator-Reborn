@@ -97,6 +97,12 @@ repositories {
         }
     }
     maven {
+        url = uri("https://modmaven.dev/")
+        content {
+            includeGroup "mekanism"
+        }
+    }
+    maven {
         url = uri("https://maven.gtceu.com")
         content {
             includeGroup "com.gregtechceu.gtceu"
@@ -174,6 +180,8 @@ dependencies {
     implement("maven.modrinth:creativecore:2.13.51")
     implement("maven.modrinth:littletiles:1.6.0-pre234")
     implement("curse.maven:domum-ornamentum-527361:7789217")
+    implement("mekanism:Mekanism:1.21.1-10.7.19.85")
+    implement("mekanism:Mekanism:1.21.1-10.7.19.85:generators")
     implement("maven.modrinth:rechiseled:1.2.6-neoforge-mc1.21")
     implement("maven.modrinth:supermartijn642s-core-lib:1.1.25-neoforge-mc1.21")
     implement("maven.modrinth:supermartijn642s-config-lib:1.1.8-neoforge-mc1.21")

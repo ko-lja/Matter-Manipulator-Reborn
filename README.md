@@ -33,6 +33,7 @@ Machines, cables, their settings, and filters from the mods below are handled pr
 | [GTCEu Modern](https://www.curseforge.com/minecraft/mc-mods/gregtechceu-modern) | ✅ | ✅ | ❌ |
 | [LaserIO](https://www.curseforge.com/minecraft/mc-mods/laserio) | ✅ | ✅ | ✅ |
 | [LittleTiles](https://www.curseforge.com/minecraft/mc-mods/littletiles) | ✅ | ✅ | ❌ |
+| [Mekanism](https://www.curseforge.com/minecraft/mc-mods/mekanism) and [Mekanism Generators](https://www.curseforge.com/minecraft/mc-mods/mekanism-generators) | ✅ | ✅ | ❌ |
 | [Project Red](https://www.curseforge.com/minecraft/mc-mods/project-red-transmission) | ✅ | ✅ | ❌ |
 | [Rechiseled](https://www.curseforge.com/minecraft/mc-mods/rechiseled) | ✅ | ✅ | ✅ |
 
