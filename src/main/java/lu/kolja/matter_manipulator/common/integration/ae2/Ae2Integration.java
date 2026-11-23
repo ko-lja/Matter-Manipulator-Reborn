@@ -172,18 +172,11 @@ public final class Ae2Integration {
         }
 
         var source = IActionSource.ofPlayer(player, accessPoint);
-        var crafting = grid.getCraftingService();
         var entries = new ArrayList<CraftingEntry>();
         for (var entry : combined.entrySet()) {
             var demand = entry.getValue();
-            var future = crafting.beginCraftingCalculation(
-                    player.level(),
-                    () -> source,
-                    entry.getKey(),
-                    demand.amount(),
-                    CalculationStrategy.REPORT_MISSING_ITEMS
-            );
-            entries.add(new CraftingEntry(entry.getKey(), demand, future));
+            var future = beginCalculation(player, grid, source, entry.getKey(), demand.amount());
+            entries.add(new CraftingEntry(entry.getKey(), demand, future, 0));
         }
         CRAFTING_QUEUES.put(player.getUUID(), new CraftingQueue(player, tool, grid, source, entries));
         player.displayClientMessage(
@@ -191,6 +184,22 @@ public final class Ae2Integration {
                 false
         );
         return true;
+    }
+
+    private static Future<ICraftingPlan> beginCalculation(
+            ServerPlayer player,
+            IGrid grid,
+            IActionSource source,
+            AEItemKey key,
+            long amount
+    ) {
+        return grid.getCraftingService().beginCraftingCalculation(
+                player.level(),
+                () -> source,
+                key,
+                amount,
+                CalculationStrategy.REPORT_MISSING_ITEMS
+        );
     }
 
     public static void tickCrafting() {
@@ -1154,10 +1163,13 @@ public final class Ae2Integration {
     public record CraftingEntry(
             AEItemKey key,
             ItemDemand demand,
-            Future<ICraftingPlan> future
+            Future<ICraftingPlan> future,
+            int recalculations
     ) {}
 
     public static final class CraftingQueue {
+
+        private static final int MAX_RECALCULATIONS = 2;
 
         private final ServerPlayer player;
         private final ItemStack tool;
@@ -1179,7 +1191,7 @@ public final class Ae2Integration {
             this.tool = tool;
             this.grid = grid;
             this.source = source;
-            this.entries = List.copyOf(entries);
+            this.entries = new ArrayList<>(entries);
         }
 
         private boolean tick() {
@@ -1233,6 +1245,16 @@ public final class Ae2Integration {
                     continue;
                 }
                 if (isBusy(result.errorCode(), result.errorDetail())) {
+                    return false;
+                }
+                if (result.errorCode() == CraftingSubmitErrorCode.MISSING_INGREDIENT
+                        && entry.recalculations() < MAX_RECALCULATIONS) {
+                    entries.set(index, new CraftingEntry(
+                            entry.key(),
+                            entry.demand(),
+                            beginCalculation(player, grid, source, entry.key(), entry.demand().amount()),
+                            entry.recalculations() + 1
+                    ));
                     return false;
                 }
                 reportFailure(entry, failureReason(result.errorCode()));
